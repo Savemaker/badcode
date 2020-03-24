@@ -3,10 +3,7 @@ package ru.liga.intership.badcode.service;
 
 import ru.liga.intership.badcode.domain.Person;
 
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.Statement;
+import java.sql.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -18,38 +15,43 @@ public class PersonService {
      *
      * @return
      */
-    public void getAdultMaleUsersAverageBMI() {
-        double totalImt = 0.0;
+    public double getAdultMaleUsersAverageBMI(ResultSet resultSet) {
+        double totalBMI = 0.0;
         long countOfPerson = 0;
+        double averageBMI = 0.0;
+        int FAILURE = -1;
+
         try {
-
-            Connection conn = DriverManager.getConnection("jdbc:hsqldb:mem:test", "sa", "");
-            Statement statement = conn.createStatement();
-            ResultSet rs = statement.executeQuery("SELECT * FROM person WHERE sex = 'male' AND age > 18");
-            List<Person> adultPersons = new ArrayList<>();
-            while (rs.next()) {
-                Person p = new Person();
-                //Retrieve by column name
-                p.setId(rs.getLong("id"));
-                p.setSex(rs.getString("sex"));
-                p.setName(rs.getString("name"));
-                p.setAge(rs.getLong("age"));
-                p.setWeight(rs.getLong("weight"));
-                p.setHeight(rs.getLong("height"));
-                adultPersons.add(p);
-            }
-
+            List<Person> adultPersons = getPeopleList(resultSet);
             for (Person p : adultPersons) {
                 double heightInMeters = p.getHeight() / 100d;
-                double imt = p.getWeight() / (Double) (heightInMeters * heightInMeters);
-                totalImt += imt;
+                double BMI = p.getWeight() / (Double) (heightInMeters * heightInMeters);
+                totalBMI += BMI;
             }
             countOfPerson = adultPersons.size();
+            averageBMI = totalBMI / countOfPerson;
+            return averageBMI;
 
         } catch (Exception e) {
             e.printStackTrace();
+            return FAILURE;
         }
-        System.out.println("Average imt - " + totalImt / countOfPerson);
+    }
+
+    public List<Person> getPeopleList(ResultSet resultSet) throws SQLException {
+        List<Person> adultPersons = new ArrayList<>();
+        while (resultSet.next()) {
+            Person person = new Person();
+            //Retrieve by column name
+            person.setId(resultSet.getLong("id"));
+            person.setSex(resultSet.getString("sex"));
+            person.setName(resultSet.getString("name"));
+            person.setAge(resultSet.getLong("age"));
+            person.setWeight(resultSet.getLong("weight"));
+            person.setHeight(resultSet.getLong("height"));
+            adultPersons.add(person);
+        }
+        return adultPersons;
     }
 
 }
